@@ -1,0 +1,55 @@
+.hero {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero .board {
+     display: flex;
+     flex-direction: column;
+     width: 800px;
+     height: 800px;
+     box-shadow: 0px 0px 10px 2px rgba(0, 0, 0, .2);
+     border-radius: 15px;
+     overflow: hidden;
+}
+
+.hero .board .row {
+    display: flex;
+    width: 100%;
+}
+
+.hero .board .row .col {
+    min-width: 100px;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.bg-light {
+    background: #eee;
+}
+
+.bg-dark {
+    background: #888;
+}
+
+.possible-move {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 80px;
+    height: 80px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 5px solid red;
+    background: none;
+}
+
+.hero .board .row .col img {
+    width: 100px;
+}
