@@ -1,5 +1,11 @@
 <div class="hero">
 
+    <!-- <div class="hud">
+        <div class="turns">
+            <img [src]="'/assets/pawn-w.svg'" alt="peça de xadrez">
+        </div>
+    </div> -->
+
     <div class="board" *ngIf="!loadingBoard">
 
         <div class="row" *ngFor="let row of this.tabuleiro; let rowIndex = index">

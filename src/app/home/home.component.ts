@@ -208,40 +208,559 @@ export class HomeComponent implements OnInit {
     switch(piece.nome){
       case "PEAO":
         if(piece.cor === "BRANCO"){
-          if(piece.firstMove){
-            this.tabuleiro[rowIndex - 1][colIndex].isPossibleMove = true;
-            this.tabuleiro[rowIndex - 2][colIndex].isPossibleMove = true;
-          } else {
-            this.tabuleiro[rowIndex - 1][colIndex].isPossibleMove = true;
+          // Antes de testar movimentos para frente, testa se a posição à frente está livre
+          if(this.isPlaceFree(rowIndex - 1, colIndex)){
+            if(piece.firstMove){
+              this.tabuleiro[rowIndex - 1][colIndex].isPossibleMove = true;
+
+              // No primeiro movimento do peão pode andar duas casas
+              // Mas antes deve verificar se essa casa está livre
+              if(this.isPlaceFree(rowIndex - 2, colIndex))
+                this.tabuleiro[rowIndex - 2][colIndex].isPossibleMove = true;
+
+            } else {
+              this.tabuleiro[rowIndex - 1][colIndex].isPossibleMove = true;
+            }
           }
 
-          if(colIndex - 1 >= 0 && this.tabuleiro[rowIndex - 1][colIndex - 1].innerPiece !== null
+          if(this.isPlaceValid(rowIndex, colIndex - 1) && !this.isPlaceFree(rowIndex - 1, colIndex - 1)
               && this.tabuleiro[rowIndex - 1][colIndex - 1].innerPiece.cor === "PRETO"){
             this.tabuleiro[rowIndex - 1][colIndex - 1].isPossibleMove = true;
           }
 
-          if(colIndex + 1 <= 7 && this.tabuleiro[rowIndex - 1][colIndex + 1].innerPiece !== null
+          if(this.isPlaceValid(rowIndex, colIndex + 1) && !this.isPlaceFree(rowIndex - 1, colIndex + 1)
             && this.tabuleiro[rowIndex - 1][colIndex + 1].innerPiece.cor === "PRETO"){
             this.tabuleiro[rowIndex - 1][colIndex + 1].isPossibleMove = true;
           }
         } else if(piece.cor === "PRETO"){
-          if(piece.firstMove){
-            this.tabuleiro[rowIndex + 1][colIndex].isPossibleMove = true;
-            this.tabuleiro[rowIndex + 2][colIndex].isPossibleMove = true;
-          } else {
-            this.tabuleiro[rowIndex + 1][colIndex].isPossibleMove = true;
+          // Antes de testar movimentos para frente, testa se a posição à frente está livre
+          if(this.isPlaceFree(rowIndex + 1, colIndex)){
+            if(piece.firstMove){
+              this.tabuleiro[rowIndex + 1][colIndex].isPossibleMove = true;
+
+              // No primeiro movimento do peão pode andar duas casas
+              // Mas antes deve verificar se essa casa está livre
+              if(this.isPlaceFree(rowIndex + 2, colIndex))
+                this.tabuleiro[rowIndex + 2][colIndex].isPossibleMove = true;
+            } else {
+              this.tabuleiro[rowIndex + 1][colIndex].isPossibleMove = true;
+            }
           }
 
-          if(colIndex - 1 >= 0 && this.tabuleiro[rowIndex + 1][colIndex - 1].innerPiece !== null
+          if(this.isPlaceValid(rowIndex, colIndex - 1) && !this.isPlaceFree(rowIndex + 1, colIndex - 1)
               && this.tabuleiro[rowIndex + 1][colIndex - 1].innerPiece.cor === "BRANCO"){
             this.tabuleiro[rowIndex + 1][colIndex - 1].isPossibleMove = true;
           }
 
-          if(colIndex + 1 <= 7 && this.tabuleiro[rowIndex + 1][colIndex + 1].innerPiece !== null
+          if(this.isPlaceValid(rowIndex, colIndex + 1) && !this.isPlaceFree(rowIndex + 1, colIndex + 1)
             && this.tabuleiro[rowIndex + 1][colIndex + 1].innerPiece.cor === "BRANCO"){
             this.tabuleiro[rowIndex + 1][colIndex + 1].isPossibleMove = true;
           }
         }
+        break;
+    
+      case "CAVALO":
+        // Top
+        if(this.isPlaceValid(rowIndex - 2, colIndex - 1)){
+          if(this.isPlaceFree(rowIndex - 2, colIndex - 1)){
+            this.tabuleiro[rowIndex - 2][colIndex - 1].isPossibleMove = true;
+          } else if(this.tabuleiro[rowIndex - 2][colIndex - 1].innerPiece.cor !== piece.cor){
+            this.tabuleiro[rowIndex - 2][colIndex - 1].isPossibleMove = true;
+          }
+        }
+        
+        if(this.isPlaceValid(rowIndex - 2, colIndex + 1)){
+          if(this.isPlaceFree(rowIndex - 2, colIndex + 1)){
+            this.tabuleiro[rowIndex - 2][colIndex + 1].isPossibleMove = true;
+          } else if(this.tabuleiro[rowIndex - 2][colIndex + 1].innerPiece.cor !== piece.cor){
+            this.tabuleiro[rowIndex - 2][colIndex + 1].isPossibleMove = true;
+          }
+        }
+
+        // Bottom
+        if(this.isPlaceValid(rowIndex + 2, colIndex - 1)){
+          if(this.isPlaceFree(rowIndex + 2, colIndex - 1)){
+            this.tabuleiro[rowIndex + 2][colIndex - 1].isPossibleMove = true;
+          } else if(this.tabuleiro[rowIndex + 2][colIndex - 1].innerPiece.cor !== piece.cor){
+            this.tabuleiro[rowIndex + 2][colIndex - 1].isPossibleMove = true;
+          }
+        }
+        
+        if(this.isPlaceValid(rowIndex + 2, colIndex + 1)){
+          if(this.isPlaceFree(rowIndex + 2, colIndex + 1)){
+            this.tabuleiro[rowIndex + 2][colIndex + 1].isPossibleMove = true;
+          } else if(this.tabuleiro[rowIndex + 2][colIndex + 1].innerPiece.cor !== piece.cor){
+            this.tabuleiro[rowIndex + 2][colIndex + 1].isPossibleMove = true;
+          }
+        }
+        
+        // Left
+        if(this.isPlaceValid(rowIndex - 1, colIndex - 2)){
+          if(this.isPlaceFree(rowIndex - 1, colIndex - 2)){
+            this.tabuleiro[rowIndex - 1][colIndex - 2].isPossibleMove = true;
+          } else if(this.tabuleiro[rowIndex - 1][colIndex - 2].innerPiece.cor !== piece.cor){
+            this.tabuleiro[rowIndex - 1][colIndex - 2].isPossibleMove = true;
+          }
+        }
+        
+        if(this.isPlaceValid(rowIndex + 1, colIndex - 2)){
+          if(this.isPlaceFree(rowIndex + 1, colIndex - 2)){
+            this.tabuleiro[rowIndex + 1][colIndex - 2].isPossibleMove = true;
+          } else if(this.tabuleiro[rowIndex + 1][colIndex - 2].innerPiece.cor !== piece.cor){
+            this.tabuleiro[rowIndex + 1][colIndex - 2].isPossibleMove = true;
+          }
+        }
+
+        // Right
+        if(this.isPlaceValid(rowIndex - 1, colIndex + 2)){
+          if(this.isPlaceFree(rowIndex - 1, colIndex + 2)){
+            this.tabuleiro[rowIndex - 1][colIndex + 2].isPossibleMove = true;
+          } else if(this.tabuleiro[rowIndex - 1][colIndex + 2].innerPiece.cor !== piece.cor){
+            this.tabuleiro[rowIndex - 1][colIndex + 2].isPossibleMove = true;
+          }
+        }
+        
+        if(this.isPlaceValid(rowIndex + 1, colIndex + 2)){
+          if(this.isPlaceFree(rowIndex + 1, colIndex + 2)){
+            this.tabuleiro[rowIndex + 1][colIndex + 2].isPossibleMove = true;
+          } else if(this.tabuleiro[rowIndex + 1][colIndex + 2].innerPiece.cor !== piece.cor){
+            this.tabuleiro[rowIndex + 1][colIndex + 2].isPossibleMove = true;
+          }
+        }
+
+        break;
+    
+      case "BISPO":
+        var nextPositionRow;
+        var nextPositionCol;
+        var cont = 0;
+        var blockTopRight = false;
+        var blockTopLeft = false;
+        var blockBottomRight = false;
+        var blockBottomLeft = false;
+
+        do {
+          cont += 1;
+
+          if(!blockTopRight){
+            nextPositionRow = rowIndex - cont;
+            nextPositionCol = colIndex + cont;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockTopRight = true;
+              } else {
+                blockTopRight = true;
+              }
+            } else {
+              blockTopRight = true;
+            }
+          }
+
+          if(!blockTopLeft){
+            nextPositionRow = rowIndex - cont;
+            nextPositionCol = colIndex - cont;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockTopLeft = true;
+              } else {
+                blockTopLeft = true;
+              }
+            } else {
+              blockTopLeft = true;
+            }
+          }
+
+          if(!blockBottomRight){
+            nextPositionRow = rowIndex + cont;
+            nextPositionCol = colIndex + cont;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockBottomRight = true;
+              } else {
+                blockBottomRight = true;
+              }
+            } else {
+              blockBottomRight = true;
+            }
+          }
+
+          if(!blockBottomLeft){
+            nextPositionRow = rowIndex + cont;
+            nextPositionCol = colIndex - cont;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockBottomLeft = true;
+              } else {
+                blockBottomLeft = true;
+              }
+            } else {
+              blockBottomLeft = true;
+            }
+          }
+        } while(!blockTopRight || !blockTopLeft || !blockBottomRight || !blockBottomLeft);
+
+        break;
+
+      case "TORRE":
+        var nextPositionRow;
+        var nextPositionCol;
+        var cont = 0;
+        var blockTop = false;
+        var blockBottom = false;
+        var blockLeft = false;
+        var blockRight = false;
+
+        do {
+          cont += 1;
+
+          if(!blockTop){
+            nextPositionRow = rowIndex - cont;
+            nextPositionCol = colIndex;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockTop = true;
+              } else {
+                blockTop = true;
+              }
+            } else {
+              blockTop = true;
+            }
+          }
+
+          if(!blockBottom){
+            nextPositionRow = rowIndex + cont;
+            nextPositionCol = colIndex;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockBottom = true;
+              } else {
+                blockBottom = true;
+              }
+            } else {
+              blockBottom = true;
+            }
+          }
+
+          if(!blockLeft){
+            nextPositionRow = rowIndex;
+            nextPositionCol = colIndex - cont;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockLeft = true;
+              } else {
+                blockLeft = true;
+              }
+            } else {
+              blockLeft = true;
+            }
+          }
+
+          if(!blockRight){
+            nextPositionRow = rowIndex;
+            nextPositionCol = colIndex + cont;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockRight = true;
+              } else {
+                blockRight = true;
+              }
+            } else {
+              blockRight = true;
+            }
+          }
+        } while(!blockTop || !blockBottom || !blockLeft || !blockRight);
+
+        break;
+
+      case "RAINHA":
+        var nextPositionRow;
+        var nextPositionCol;
+        var cont = 0;
+        var blockTopRight = false;
+        var blockTopLeft = false;
+        var blockBottomRight = false;
+        var blockBottomLeft = false;
+        var blockTop = false;
+        var blockBottom = false;
+        var blockLeft = false;
+        var blockRight = false;
+
+        do {
+          cont += 1;
+
+          if(!blockTopRight){
+            nextPositionRow = rowIndex - cont;
+            nextPositionCol = colIndex + cont;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockTopRight = true;
+              } else {
+                blockTopRight = true;
+              }
+            } else {
+              blockTopRight = true;
+            }
+          }
+
+          if(!blockTopLeft){
+            nextPositionRow = rowIndex - cont;
+            nextPositionCol = colIndex - cont;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockTopLeft = true;
+              } else {
+                blockTopLeft = true;
+              }
+            } else {
+              blockTopLeft = true;
+            }
+          }
+
+          if(!blockBottomRight){
+            nextPositionRow = rowIndex + cont;
+            nextPositionCol = colIndex + cont;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockBottomRight = true;
+              } else {
+                blockBottomRight = true;
+              }
+            } else {
+              blockBottomRight = true;
+            }
+          }
+
+          if(!blockBottomLeft){
+            nextPositionRow = rowIndex + cont;
+            nextPositionCol = colIndex - cont;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockBottomLeft = true;
+              } else {
+                blockBottomLeft = true;
+              }
+            } else {
+              blockBottomLeft = true;
+            }
+          }
+
+          if(!blockTop){
+            nextPositionRow = rowIndex - cont;
+            nextPositionCol = colIndex;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockTop = true;
+              } else {
+                blockTop = true;
+              }
+            } else {
+              blockTop = true;
+            }
+          }
+
+          if(!blockBottom){
+            nextPositionRow = rowIndex + cont;
+            nextPositionCol = colIndex;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockBottom = true;
+              } else {
+                blockBottom = true;
+              }
+            } else {
+              blockBottom = true;
+            }
+          }
+
+          if(!blockLeft){
+            nextPositionRow = rowIndex;
+            nextPositionCol = colIndex - cont;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockLeft = true;
+              } else {
+                blockLeft = true;
+              }
+            } else {
+              blockLeft = true;
+            }
+          }
+
+          if(!blockRight){
+            nextPositionRow = rowIndex;
+            nextPositionCol = colIndex + cont;
+  
+            if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+              if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+              } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+                this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                blockRight = true;
+              } else {
+                blockRight = true;
+              }
+            } else {
+              blockRight = true;
+            }
+          }
+
+        } while(!blockTopRight || !blockTopLeft || !blockBottomRight || !blockBottomLeft
+                || !blockTop || !blockBottom || !blockLeft || !blockRight);
+
+        break;
+
+      case "REI":
+        var nextPositionRow;
+        var nextPositionCol;
+
+        // Top
+        nextPositionRow = rowIndex - 1;
+        nextPositionCol = colIndex;
+        if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+          if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          }
+        }
+
+        // Top-Right
+        nextPositionRow = rowIndex - 1;
+        nextPositionCol = colIndex + 1;
+        if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+          if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          }
+        }
+
+        // Right
+        nextPositionRow = rowIndex;
+        nextPositionCol = colIndex + 1;
+        if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+          if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          }
+        }
+
+        // Bottom-Right
+        nextPositionRow = rowIndex + 1;
+        nextPositionCol = colIndex + 1;
+        if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+          if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          }
+        }
+
+        // Bottom
+        nextPositionRow = rowIndex + 1;
+        nextPositionCol = colIndex;
+        if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+          if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          }
+        }
+
+        // Bottom-Left
+        nextPositionRow = rowIndex + 1;
+        nextPositionCol = colIndex - 1;
+        if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+          if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          }
+        }
+
+        // Left
+        nextPositionRow = rowIndex;
+        nextPositionCol = colIndex - 1;
+        if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+          if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          }
+        }
+
+        // Top-Left
+        nextPositionRow = rowIndex - 1;
+        nextPositionCol = colIndex - 1;
+        if(this.isPlaceValid(nextPositionRow, nextPositionCol)){
+          if(this.isPlaceFree(nextPositionRow, nextPositionCol)){
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          } else if(this.tabuleiro[nextPositionRow][nextPositionCol].innerPiece.cor !== this.turn) {
+            this.tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+          }
+        }
+
         break;
     }
 
@@ -271,6 +790,28 @@ export class HomeComponent implements OnInit {
 
   public nextTurn(){
     this.turn = this.turn === "BRANCO" ? "PRETO" : "BRANCO";
+  }
+
+  public isPlaceFree(rowIndex: number, colIndex: number) : boolean {
+
+    // Validações para fins de debug
+    // Retirar depois de finalizado o jogo
+    if(rowIndex < 0 || rowIndex > 7){
+      window.alert("Index da linha inválido...");
+      return false;
+    }
+
+    if(colIndex < 0 || colIndex > 7){
+      window.alert("Index da coluna inválido...");
+      return false;
+    }
+
+    return this.tabuleiro[rowIndex][colIndex].innerPiece === null;
+  }
+
+  public isPlaceValid(rowIndex: number, colIndex: number) : boolean{
+    // Verifica se posição está dentro do tabuleiro
+    return (rowIndex >= 0 && rowIndex <= 7 && colIndex >= 0 && colIndex <= 7);
   }
   // #region UTILITIES
 

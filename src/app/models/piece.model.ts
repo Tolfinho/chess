@@ -1,10 +1,10 @@
 export class Piece {
-    nome: string = "";
-    cor: string = "";
+    nome: "PEAO" | "CAVALO" | "BISPO" | "TORRE" | "RAINHA" | "REI" | "";
+    cor: "BRANCO" | "PRETO" | "";
     image: string = "";
     firstMove: boolean = true;
 
-    constructor(nome: string, cor: string, image: string, firstMove: boolean = true, isPossibleMove: boolean = false){
+    constructor(nome: "PEAO" | "CAVALO" | "BISPO" | "TORRE" | "RAINHA" | "REI" | "", cor: "BRANCO" | "PRETO" | "", image: string, firstMove: boolean = true, isPossibleMove: boolean = false){
         this.nome = nome;
         this.cor = cor;
         this.image = image;
