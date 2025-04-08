@@ -9,25 +9,51 @@
 
 .hero .hud {
     display: flex;
-    width: 800px;
+    width: 680px;
+    height: 50px;
     margin: 0 auto;
     justify-content: space-between;
+    background: #777;
+    border-radius: 15px;
+    margin-bottom: 10px;
+    padding: 4px;
 }
 
 .hero .hud .turn {
     display: flex;
     align-items: center;
+    width: 50%;
+    border-radius: 12px;
+    padding: 0 10px;
+    transition: all .3s ease;
+}
+
+.hero .hud .turn:nth-child(2){
+    justify-content: flex-end;
+}
+
+.hero .hud .turn.current {
+    background-color: #ddd;
 }
 
 .hero .hud .turn img {
     width: 30px;
 }
 
+.hero .hud .turn span {
+    font-size: 20px;
+    color: #eee;
+}
+
+.hero .hud .turn.current span {
+    color: #333;
+}
+
 .hero .board {
     display: flex;
     flex-direction: column;
-    width: 800px;
-    height: 800px;
+    width: 680px;
+    height: 680px;
     box-shadow: 0px 0px 10px 2px rgba(0, 0, 0, .2);
     border-radius: 15px;
     overflow: hidden;
@@ -39,8 +65,8 @@
 }
 
 .hero .board .row .col {
-    min-width: 100px;
-    min-height: 100px;
+    width: 85px;
+    height: 85px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -55,6 +81,10 @@
     background: #888;
 }
 
+.bg-danger {
+    background: red;
+}
+
 .possible-move {
     position: absolute;
     top: 50%;
@@ -63,10 +93,11 @@
     height: 80px;
     transform: translate(-50%, -50%);
     border-radius: 50%;
-    border: 5px solid red;
+    // border: 5px solid red;
+    border: 5px solid rgba(0, 0, 0, .2);
     background: none;
 }
 
 .hero .board .row .col img {
-    width: 100px;
+    width: 80px;
 }

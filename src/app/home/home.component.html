@@ -1,16 +1,20 @@
 <div class="hero">
 
-    <!-- <div class="hud">
-        <div class="turns">
+    <div class="hud">
+        <div [ngClass]="turn === 'BRANCO' ? 'turn current' : 'turn'">
             <img [src]="'/assets/pawn-w.svg'" alt="peça de xadrez">
+            <span>{{ formatTimer(timerBranco) }}</span>
         </div>
-    </div> -->
+        <div [ngClass]="turn === 'PRETO' ? 'turn current' : 'turn'">
+            <span>{{ formatTimer(timerPreto) }}</span>
+            <img [src]="'/assets/pawn-b.svg'" alt="peça de xadrez">
+        </div>
+    </div>
 
     <div class="board" *ngIf="!loadingBoard">
-
         <div class="row" *ngFor="let row of this.tabuleiro; let rowIndex = index">
-            <div class="col" [ngClass]="(rowIndex + colIndex + 1) % 2 === 0 ? 'bg-dark' : 'bg-light'"
-                *ngFor="let col of row; let colIndex = index" (click)="col.isPossibleMove ? movePiece(rowIndex, colIndex) : getPossibleMoves(col, rowIndex, colIndex)">
+            <div class="col" [ngClass]="(xeque || xequeMate) && col.innerPiece !== null && col.innerPiece.nome === 'REI' && col.innerPiece.cor === xequeCor ? 'bg-danger' : 'col'" [ngClass]="(rowIndex + colIndex + 1) % 2 === 0 ? 'bg-dark' : 'bg-light'"
+                *ngFor="let col of row; let colIndex = index" (click)="col.isPossibleMove ? this.tabuleiro = movePiece(this.tabuleiro, rowIndex, colIndex) : handlePossibleMoves(this.tabuleiro, rowIndex, colIndex)">
                 <div *ngIf="col.isPossibleMove" class="possible-move"></div>
                 <img *ngIf="col.innerPiece !== null" [src]="col.innerPiece.image" [alt]="col.innerPiece.nome">
             </div>
