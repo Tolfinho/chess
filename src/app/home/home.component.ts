@@ -46,8 +46,8 @@ export class HomeComponent implements OnInit {
   public kingCordenadas: Cordenadas = new Cordenadas();
 
   public interval: any;
-  public timerPreto: number = 180;
-  public timerBranco: number = 180;
+  public timerPreto: number = 180.00;
+  public timerBranco: number = 180.00;
   // #endregion VARIABLES
 
   // #region UTILITIES
@@ -64,9 +64,11 @@ export class HomeComponent implements OnInit {
     if(this.currentPiece === null || this.currentPiece.cor !== this.turn)
       return;
 
+    // Pega os possíveis movimentos iniciais
     auxPossibleMoves = this.getPossibleMoves(tabuleiro, rowIndex, colIndex);
+
     var indexesToRemove: number[] = []
-    
+    // Retira os movimentos que deixam o rei em xeque
     for(var i=0; i<auxPossibleMoves.length; i++){
 
       var auxIsXeque: boolean = false;
@@ -678,11 +680,12 @@ export class HomeComponent implements OnInit {
 
   // provisória para ajudar nos testes
   public movePiece(tabuleiro: Tabuleiro, moveRowIndex: number, moveColIndex: number): Tabuleiro {
-    tabuleiro[this.currentRowIndex][this.currentColIndex].innerPiece = null;
     this.currentPiece!.firstMove = false;
+    tabuleiro[this.currentRowIndex][this.currentColIndex].innerPiece = null;
     tabuleiro[moveRowIndex][moveColIndex].innerPiece = this.currentPiece;
-    this.xeque = this.isXeque(this.tabuleiro, this.currentPiece!.cor === "PRETO" ? "BRANCO" : "PRETO");
-    this.xequeCor = this.xeque ? (this.currentPiece!.cor === "PRETO" ? "BRANCO" : "PRETO") : "";
+
+    // Caso seja xeque mate termina o jogo
+    this.isXequeMate(tabuleiro, moveRowIndex, moveColIndex);
 
     this.currentRowIndex = -1;
     this.currentColIndex = -1;
@@ -745,8 +748,13 @@ export class HomeComponent implements OnInit {
     return xeque;
   }
 
-  public isXequeMate(){
+  public isXequeMate(tabuleiro: Tabuleiro, movedRow: number, movedCol: number){
     
+    var piece = tabuleiro[movedRow][movedCol].innerPiece;
+    
+    // Primeiro verifica se foi xeque, caso contrário nem testa xeque-mate
+    var auxIsXeque = this.isXeque(tabuleiro, piece?.cor === "PRETO" ? "BRANCO" : "PRETO");
+
   }
 
   public clearPossibleMoves(tabuleiro: Tabuleiro): Tabuleiro{
@@ -767,15 +775,15 @@ export class HomeComponent implements OnInit {
 
     this.interval = setInterval(() => {
       if(this.turn === "BRANCO")
-        this.timerBranco--;
+        this.timerBranco -= 0.01;
       else
-        this.timerPreto--;
+        this.timerPreto -= 0.01;
 
       if(this.timerBranco <= 0)
         this.endGame("PRETO")
       if(this.timerPreto <= 0)
         this.endGame("BRANCO")
-    }, 1000)
+    }, 10)
   }
 
   public endGame(winner: CorPeca){
@@ -948,7 +956,7 @@ export class HomeComponent implements OnInit {
     var formattedTimer: string = "";
     var min: string = Math.floor(seconds/60).toString();
     var sec: string = (seconds%60).toString();
-    formattedTimer += (min.length > 1 ? min : "0"+min)+":"+(sec.length > 1 ? sec : "0"+sec);
+    formattedTimer += (min.length > 1 ? min : "0"+min)+":"+(sec.length > 1 ? Number(sec).toFixed(2) : "0"+Number(sec).toFixed(2));
 
     return formattedTimer;
   }

@@ -1,0 +1,19 @@
+{
+    "name": "Angular Dev",
+    "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+    "features": {
+      "ghcr.io/devcontainers/features/node:1": {
+        "version": "20"
+      }
+    },
+    "postCreateCommand": "npm install",
+    "forwardPorts": [4200],
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "angular.ng-template",
+          "dbaeumer.vscode-eslint"
+        ]
+      }
+    }
+  }
