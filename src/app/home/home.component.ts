@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { Tabuleiro } from '../models/tabuleiro';
 import { IPlace } from '../models/place';
 import { CorPeca, IPiece, NomePeca } from '../models/piece';
+import { Cordenadas } from '../models/cordenadas';
 
 @Component({
   selector: 'app-home',
@@ -22,7 +23,8 @@ export class HomeComponent implements OnInit {
     this.loadingBoard = true;
 
     // Inicializa o tabuleiro
-    this.tabuleiro = this.criaTabuleiro();
+    //this.tabuleiro = this.criaTabuleiro();
+    this.tabuleiro = this.criaTabuleiroTestes();
     this.loadingBoard = false;
     
     this.nextTurn(true);
@@ -30,6 +32,7 @@ export class HomeComponent implements OnInit {
 
   // #region VARIABLES
   public tabuleiro: Tabuleiro = this.novoTabuleiroVazio();
+  public possibleMoves: Cordenadas[] = [];
 
   public turn: "BRANCO" | "PRETO" = "BRANCO";
   public loadingBoard: boolean = true;
@@ -39,6 +42,8 @@ export class HomeComponent implements OnInit {
   public xeque: boolean = false;
   public xequeMate: boolean = false;
   public xequeCor: CorPeca = "";
+  public isKingDanger: boolean = false;
+  public kingCordenadas: Cordenadas = new Cordenadas();
 
   public interval: any;
   public timerPreto: number = 180;
@@ -48,43 +53,57 @@ export class HomeComponent implements OnInit {
   // #region UTILITIES
   public handlePossibleMoves(tabuleiro: Tabuleiro, rowIndex: number, colIndex: number){
 
+    this.clearPossibleMoves(this.tabuleiro);
+    this.possibleMoves = [];
+    var auxPossibleMoves: Cordenadas[] = [];
+
     this.currentPiece = tabuleiro[rowIndex][colIndex].innerPiece;
     this.currentRowIndex = rowIndex;
     this.currentColIndex = colIndex;
 
-    tabuleiro = this.getPossibleMoves(tabuleiro, rowIndex, colIndex);
-    var auxTabuleiro: Tabuleiro;
-    var auxXeque: boolean = false;
+    if(this.currentPiece === null || this.currentPiece.cor !== this.turn)
+      return;
 
-    // Verifica se cada possível movimento não deixa o rei exposto
-    for(var i=0; i<=7; i++){
-      for(var j=0; j<=7; j++){
+    auxPossibleMoves = this.getPossibleMoves(tabuleiro, rowIndex, colIndex);
+    var indexesToRemove: number[] = []
+    
+    for(var i=0; i<auxPossibleMoves.length; i++){
 
-        if(tabuleiro[i][j].isPossibleMove){
-          auxTabuleiro = this.copiaTabuleiro(tabuleiro);
-          auxTabuleiro[i][j].innerPiece = this.currentPiece;
-          auxTabuleiro[this.currentRowIndex][this.currentColIndex].innerPiece = null;
-          //console.log(auxTabuleiro)
-          auxXeque = this.isXeque(auxTabuleiro, this.turn);
-          //console.log(auxXeque)
-          // if(auxXeque) tabuleiro[i][j].isPossibleMove = false;
-        }
-        
-      }
+      var auxIsXeque: boolean = false;
+      var auxTabuleiro = this.copiaTabuleiro(this.tabuleiro);
+      auxTabuleiro[this.currentRowIndex][this.currentColIndex].innerPiece = null;
+      auxTabuleiro[auxPossibleMoves[i].row][auxPossibleMoves[i].col].innerPiece = this.currentPiece;
+
+      auxIsXeque = this.isXeque(auxTabuleiro, this.turn);
+      if(auxIsXeque)indexesToRemove.push(i);
+      
     }
 
-    this.tabuleiro = tabuleiro;
+    if(indexesToRemove.length > 0){
+      this.isKingDanger = true;
+      this.kingCordenadas = this.getKingCordenadas(this.turn)
+      setTimeout(() =>{
+        this.isKingDanger = false;
+        this.kingCordenadas = new Cordenadas();
+      }, 500);
+
+      indexesToRemove.forEach(() => auxPossibleMoves.splice(0, 1))
+    }
+
+    this.possibleMoves = auxPossibleMoves;
+
+    this.setPossibleMoves();
 
   }
 
-  public getPossibleMoves(tabuleiro: Tabuleiro, rowIndex: number, colIndex: number): Tabuleiro{
-
-    tabuleiro = this.clearPossibleMoves(tabuleiro);
+  public getPossibleMoves(tabuleiro: Tabuleiro, rowIndex: number, colIndex: number): Cordenadas[] {
+    
+    var retCordenadas: Cordenadas[] = [];
 
     const piece: IPiece | null = tabuleiro[rowIndex][colIndex].innerPiece;
     
     // Caso não tenha clicado em uma peça
-    if(piece === null) return tabuleiro;
+    if(piece === null) return [];
 
     // Caso não seja a vez da peça selecionada
     //if(piece.cor !== this.turn) return tabuleiro;
@@ -95,50 +114,50 @@ export class HomeComponent implements OnInit {
           // Antes de testar movimentos para frente, testa se a posição à frente está livre
           if(this.isPlaceFree(tabuleiro, rowIndex - 1, colIndex)){
             if(piece.firstMove){
-              tabuleiro[rowIndex - 1][colIndex].isPossibleMove = true;
+              retCordenadas.push({ row: rowIndex-1, col: colIndex });
 
               // No primeiro movimento do peão pode andar duas casas
               // Mas antes deve verificar se essa casa está livre
               if(this.isPlaceFree(tabuleiro, rowIndex - 2, colIndex))
-                tabuleiro[rowIndex - 2][colIndex].isPossibleMove = true;
+                retCordenadas.push({ row: rowIndex-2, col: colIndex });
 
             } else {
-              tabuleiro[rowIndex - 1][colIndex].isPossibleMove = true;
+              retCordenadas.push({ row: rowIndex-1, col: colIndex });
             }
           }
 
           if(this.isPlaceValid(tabuleiro, rowIndex, colIndex - 1) && !this.isPlaceFree(tabuleiro, rowIndex - 1, colIndex - 1)
               && tabuleiro[rowIndex - 1][colIndex - 1].innerPiece!.cor === "PRETO"){
-            tabuleiro[rowIndex - 1][colIndex - 1].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex-1, col: colIndex-1 });
           }
 
           if(this.isPlaceValid(tabuleiro, rowIndex, colIndex + 1) && !this.isPlaceFree(tabuleiro, rowIndex - 1, colIndex + 1)
             && tabuleiro[rowIndex - 1][colIndex + 1].innerPiece!.cor === "PRETO"){
-            tabuleiro[rowIndex - 1][colIndex + 1].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex-1, col: colIndex+1 });
           }
         } else if(piece.cor === "PRETO"){
           // Antes de testar movimentos para frente, testa se a posição à frente está livre
           if(this.isPlaceFree(tabuleiro, rowIndex + 1, colIndex)){
             if(piece.firstMove){
-              tabuleiro[rowIndex + 1][colIndex].isPossibleMove = true;
+              retCordenadas.push({ row: rowIndex+1, col: colIndex });
 
               // No primeiro movimento do peão pode andar duas casas
               // Mas antes deve verificar se essa casa está livre
               if(this.isPlaceFree(tabuleiro, rowIndex + 2, colIndex))
-                tabuleiro[rowIndex + 2][colIndex].isPossibleMove = true;
+                retCordenadas.push({ row: rowIndex+2, col: colIndex });
             } else {
-              tabuleiro[rowIndex + 1][colIndex].isPossibleMove = true;
+              retCordenadas.push({ row: rowIndex+1, col: colIndex });
             }
           }
 
           if(this.isPlaceValid(tabuleiro, rowIndex, colIndex - 1) && !this.isPlaceFree(tabuleiro, rowIndex + 1, colIndex - 1)
               && tabuleiro[rowIndex + 1][colIndex - 1].innerPiece!.cor === "BRANCO"){
-            tabuleiro[rowIndex + 1][colIndex - 1].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex+1, col: colIndex-1 });
           }
 
           if(this.isPlaceValid(tabuleiro, rowIndex, colIndex + 1) && !this.isPlaceFree(tabuleiro, rowIndex + 1, colIndex + 1)
             && tabuleiro[rowIndex + 1][colIndex + 1].innerPiece!.cor === "BRANCO"){
-            tabuleiro[rowIndex + 1][colIndex + 1].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex+1, col: colIndex+1 });
           }
         }
         break;
@@ -147,68 +166,68 @@ export class HomeComponent implements OnInit {
         // Top
         if(this.isPlaceValid(tabuleiro, rowIndex - 2, colIndex - 1)){
           if(this.isPlaceFree(tabuleiro, rowIndex - 2, colIndex - 1)){
-            tabuleiro[rowIndex - 2][colIndex - 1].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex-2, col: colIndex-1 });
           } else if(tabuleiro[rowIndex - 2][colIndex - 1].innerPiece!.cor !== piece.cor){
-            tabuleiro[rowIndex - 2][colIndex - 1].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex-2, col: colIndex-2 });
           }
         }
         
         if(this.isPlaceValid(tabuleiro, rowIndex - 2, colIndex + 1)){
           if(this.isPlaceFree(tabuleiro, rowIndex - 2, colIndex + 1)){
-            tabuleiro[rowIndex - 2][colIndex + 1].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex-2, col: colIndex+1 });
           } else if(tabuleiro[rowIndex - 2][colIndex + 1].innerPiece!.cor !== piece.cor){
-            tabuleiro[rowIndex - 2][colIndex + 1].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex-2, col: colIndex+1 });
           }
         }
 
         // Bottom
         if(this.isPlaceValid(tabuleiro, rowIndex + 2, colIndex - 1)){
           if(this.isPlaceFree(tabuleiro, rowIndex + 2, colIndex - 1)){
-            tabuleiro[rowIndex + 2][colIndex - 1].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex+2, col: colIndex-1 });
           } else if(tabuleiro[rowIndex + 2][colIndex - 1].innerPiece!.cor !== piece.cor){
-            tabuleiro[rowIndex + 2][colIndex - 1].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex+2, col: colIndex-1 });
           }
         }
         
         if(this.isPlaceValid(tabuleiro, rowIndex + 2, colIndex + 1)){
           if(this.isPlaceFree(tabuleiro, rowIndex + 2, colIndex + 1)){
-            tabuleiro[rowIndex + 2][colIndex + 1].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex+2, col: colIndex+1 });
           } else if(tabuleiro[rowIndex + 2][colIndex + 1].innerPiece!.cor !== piece.cor){
-            tabuleiro[rowIndex + 2][colIndex + 1].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex+2, col: colIndex+1 });
           }
         }
         
         // Left
         if(this.isPlaceValid(tabuleiro, rowIndex - 1, colIndex - 2)){
           if(this.isPlaceFree(tabuleiro, rowIndex - 1, colIndex - 2)){
-            tabuleiro[rowIndex - 1][colIndex - 2].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex-1, col: colIndex-2 });
           } else if(tabuleiro[rowIndex - 1][colIndex - 2].innerPiece!.cor !== piece.cor){
-            tabuleiro[rowIndex - 1][colIndex - 2].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex-1, col: colIndex-2 });
           }
         }
         
         if(this.isPlaceValid(tabuleiro, rowIndex + 1, colIndex - 2)){
           if(this.isPlaceFree(tabuleiro, rowIndex + 1, colIndex - 2)){
-            tabuleiro[rowIndex + 1][colIndex - 2].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex+1, col: colIndex-2 });
           } else if(tabuleiro[rowIndex + 1][colIndex - 2].innerPiece!.cor !== piece.cor){
-            tabuleiro[rowIndex + 1][colIndex - 2].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex+1, col: colIndex-2 });
           }
         }
 
         // Right
         if(this.isPlaceValid(tabuleiro, rowIndex - 1, colIndex + 2)){
           if(this.isPlaceFree(tabuleiro, rowIndex - 1, colIndex + 2)){
-            tabuleiro[rowIndex - 1][colIndex + 2].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex-1, col: colIndex+2 });
           } else if(tabuleiro[rowIndex - 1][colIndex + 2].innerPiece!.cor !== piece.cor){
-            tabuleiro[rowIndex - 1][colIndex + 2].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex-1, col: colIndex+2 });
           }
         }
         
         if(this.isPlaceValid(tabuleiro, rowIndex + 1, colIndex + 2)){
           if(this.isPlaceFree(tabuleiro, rowIndex + 1, colIndex + 2)){
-            tabuleiro[rowIndex + 1][colIndex + 2].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex+1, col: colIndex+2 });
           } else if(tabuleiro[rowIndex + 1][colIndex + 2].innerPiece!.cor !== piece.cor){
-            tabuleiro[rowIndex + 1][colIndex + 2].isPossibleMove = true;
+            retCordenadas.push({ row: rowIndex+1, col: colIndex+2 });
           }
         }
 
@@ -232,9 +251,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockTopRight = true;
               } else {
                 blockTopRight = true;
@@ -250,9 +269,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockTopLeft = true;
               } else {
                 blockTopLeft = true;
@@ -268,9 +287,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockBottomRight = true;
               } else {
                 blockBottomRight = true;
@@ -286,9 +305,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockBottomLeft = true;
               } else {
                 blockBottomLeft = true;
@@ -319,9 +338,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockTop = true;
               } else {
                 blockTop = true;
@@ -337,9 +356,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockBottom = true;
               } else {
                 blockBottom = true;
@@ -355,9 +374,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockLeft = true;
               } else {
                 blockLeft = true;
@@ -373,9 +392,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockRight = true;
               } else {
                 blockRight = true;
@@ -410,9 +429,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockTopRight = true;
               } else {
                 blockTopRight = true;
@@ -428,9 +447,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockTopLeft = true;
               } else {
                 blockTopLeft = true;
@@ -446,9 +465,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockBottomRight = true;
               } else {
                 blockBottomRight = true;
@@ -464,9 +483,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockBottomLeft = true;
               } else {
                 blockBottomLeft = true;
@@ -482,9 +501,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockTop = true;
               } else {
                 blockTop = true;
@@ -500,9 +519,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockBottom = true;
               } else {
                 blockBottom = true;
@@ -518,9 +537,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockLeft = true;
               } else {
                 blockLeft = true;
@@ -536,9 +555,9 @@ export class HomeComponent implements OnInit {
   
             if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
               if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-                tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+              } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+                retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
                 blockRight = true;
               } else {
                 blockRight = true;
@@ -562,9 +581,9 @@ export class HomeComponent implements OnInit {
         nextPositionCol = colIndex;
         if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
           if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
           }
         }
 
@@ -573,9 +592,9 @@ export class HomeComponent implements OnInit {
         nextPositionCol = colIndex + 1;
         if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
           if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
           }
         }
 
@@ -584,9 +603,9 @@ export class HomeComponent implements OnInit {
         nextPositionCol = colIndex + 1;
         if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
           if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
           }
         }
 
@@ -595,9 +614,9 @@ export class HomeComponent implements OnInit {
         nextPositionCol = colIndex + 1;
         if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
           if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
           }
         }
 
@@ -606,9 +625,9 @@ export class HomeComponent implements OnInit {
         nextPositionCol = colIndex;
         if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
           if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
           }
         }
 
@@ -617,9 +636,9 @@ export class HomeComponent implements OnInit {
         nextPositionCol = colIndex - 1;
         if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
           if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
           }
         }
 
@@ -628,9 +647,9 @@ export class HomeComponent implements OnInit {
         nextPositionCol = colIndex - 1;
         if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
           if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
           }
         }
 
@@ -639,16 +658,22 @@ export class HomeComponent implements OnInit {
         nextPositionCol = colIndex - 1;
         if(this.isPlaceValid(tabuleiro, nextPositionRow, nextPositionCol)){
           if(this.isPlaceFree(tabuleiro, nextPositionRow, nextPositionCol)){
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
-          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== this.turn) {
-            tabuleiro[nextPositionRow][nextPositionCol].isPossibleMove = true;
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
+          } else if(tabuleiro[nextPositionRow][nextPositionCol].innerPiece!.cor !== piece.cor) {
+            retCordenadas.push({ row: nextPositionRow, col: nextPositionCol });
           }
         }
 
         break;
     }
 
-    return tabuleiro;
+    return retCordenadas;
+  }
+
+  public setPossibleMoves(){
+    this.possibleMoves.forEach((move) => {
+      this.tabuleiro[move.row][move.col].isPossibleMove = true;
+    })
   }
 
   // provisória para ajudar nos testes
@@ -691,18 +716,29 @@ export class HomeComponent implements OnInit {
 
     for(var i=0; i<=7; i++){
       for(var j=0; j<=7; j++){
-        
-        if(!this.isPlaceFree(auxTabuleiro, i, j) && auxTabuleiro[i][j].innerPiece!.cor !== cor){
-          auxTabuleiro = this.getPossibleMoves(auxTabuleiro, i, j)
-          console.log(auxTabuleiro)
 
-          if(auxTabuleiro[reiRow][reiCol].isPossibleMove){
-            xeque = true;
-            break;
+        if(!this.isPlaceFree(tabuleiro, i, j) && tabuleiro[i][j].innerPiece!.cor !== cor){
+
+          if(i === 4 && j === 1){
+            var auxPossibleMoves = this.getPossibleMoves(tabuleiro, i, j);
+    
+            auxPossibleMoves.forEach((move) => {
+              if(move.row === reiRow && move.col === reiCol){
+                xeque = true;
+              }
+            })
+          } else {
+            var auxPossibleMoves = this.getPossibleMoves(tabuleiro, i, j);
+    
+            auxPossibleMoves.forEach((move) => {
+              if(move.row === reiRow && move.col === reiCol){
+                xeque = true;
+              }
+            })
           }
 
-          //tabuleiro = this.clearPossibleMoves(tabuleiro);
         }
+
       } 
     }
 
@@ -853,6 +889,61 @@ export class HomeComponent implements OnInit {
     return newTabuleiro;
   }
 
+  private criaTabuleiroTestes(): Tabuleiro {
+
+    // var row = [];
+    // var piece: Piece;
+    // var place: Place;
+    var newTabuleiro: Tabuleiro = this.novoTabuleiroVazio();
+
+    // Pretas
+    newTabuleiro[0][0].innerPiece = { nome: "TORRE", cor: "PRETO", image: "/assets/rook-b.svg", firstMove: true }
+    newTabuleiro[0][1].innerPiece = { nome: "CAVALO", cor: "PRETO", image: "/assets/knight-b.svg", firstMove: true }
+    newTabuleiro[0][2].innerPiece = { nome: "BISPO", cor: "PRETO", image: "/assets/bishop-b.svg", firstMove: true }
+    newTabuleiro[0][3].innerPiece = { nome: "RAINHA", cor: "PRETO", image: "/assets/queen-b.svg", firstMove: true }
+    newTabuleiro[0][4].innerPiece = { nome: "REI", cor: "PRETO", image: "/assets/king-b.svg", firstMove: true }
+    newTabuleiro[0][5].innerPiece = null
+    newTabuleiro[0][6].innerPiece = { nome: "CAVALO", cor: "PRETO", image: "/assets/knight-b.svg", firstMove: true }
+    newTabuleiro[0][7].innerPiece = { nome: "TORRE", cor: "PRETO", image: "/assets/rook-b.svg", firstMove: true }
+    
+    newTabuleiro[1][0].innerPiece = { nome: "PEAO", cor: "PRETO", image: "/assets/pawn-b.svg", firstMove: true }
+    newTabuleiro[1][1].innerPiece = { nome: "PEAO", cor: "PRETO", image: "/assets/pawn-b.svg", firstMove: true }
+    newTabuleiro[1][2].innerPiece = { nome: "PEAO", cor: "PRETO", image: "/assets/pawn-b.svg", firstMove: true }
+    newTabuleiro[1][3].innerPiece = { nome: "PEAO", cor: "PRETO", image: "/assets/pawn-b.svg", firstMove: true }
+    newTabuleiro[1][4].innerPiece = null
+    newTabuleiro[1][5].innerPiece = { nome: "PEAO", cor: "PRETO", image: "/assets/pawn-b.svg", firstMove: true }
+    newTabuleiro[1][6].innerPiece = { nome: "PEAO", cor: "PRETO", image: "/assets/pawn-b.svg", firstMove: true }
+    newTabuleiro[1][7].innerPiece = null
+
+    newTabuleiro[2][4].innerPiece = { nome: "PEAO", cor: "PRETO", image: "/assets/pawn-b.svg", firstMove: true }
+    newTabuleiro[2][7].innerPiece = { nome: "PEAO", cor: "PRETO", image: "/assets/pawn-b.svg", firstMove: true }
+
+    newTabuleiro[4][1].innerPiece = { nome: "BISPO", cor: "PRETO", image: "/assets/bishop-b.svg", firstMove: true }
+
+    // Brancas
+    newTabuleiro[5][7].innerPiece = { nome: "PEAO", cor: "BRANCO", image: "/assets/pawn-w.svg", firstMove: true }
+
+    newTabuleiro[6][0].innerPiece = { nome: "PEAO", cor: "BRANCO", image: "/assets/pawn-w.svg", firstMove: true }
+    newTabuleiro[6][1].innerPiece = { nome: "PEAO", cor: "BRANCO", image: "/assets/pawn-w.svg", firstMove: true }
+    newTabuleiro[6][2].innerPiece = { nome: "PEAO", cor: "BRANCO", image: "/assets/pawn-w.svg", firstMove: true }
+    newTabuleiro[6][3].innerPiece = { nome: "PEAO", cor: "BRANCO", image: "/assets/pawn-w.svg", firstMove: true }
+    newTabuleiro[6][4].innerPiece = { nome: "PEAO", cor: "BRANCO", image: "/assets/pawn-w.svg", firstMove: true }
+    newTabuleiro[6][5].innerPiece = { nome: "PEAO", cor: "BRANCO", image: "/assets/pawn-w.svg", firstMove: true }
+    newTabuleiro[6][6].innerPiece = { nome: "PEAO", cor: "BRANCO", image: "/assets/pawn-w.svg", firstMove: true }
+    newTabuleiro[6][7].innerPiece = { nome: "TORRE", cor: "BRANCO", image: "/assets/rook-w.svg", firstMove: true }
+
+    newTabuleiro[7][0].innerPiece = { nome: "TORRE", cor: "BRANCO", image: "/assets/rook-w.svg", firstMove: true }
+    newTabuleiro[7][1].innerPiece = { nome: "CAVALO", cor: "BRANCO", image: "/assets/knight-w.svg", firstMove: true }
+    newTabuleiro[7][2].innerPiece = { nome: "BISPO", cor: "BRANCO", image: "/assets/bishop-w.svg", firstMove: true }
+    newTabuleiro[7][3].innerPiece = { nome: "RAINHA", cor: "BRANCO", image: "/assets/queen-w.svg", firstMove: true }
+    newTabuleiro[7][4].innerPiece = { nome: "REI", cor: "BRANCO", image: "/assets/king-w.svg", firstMove: true }
+    newTabuleiro[7][5].innerPiece = { nome: "BISPO", cor: "BRANCO", image: "/assets/bishop-w.svg", firstMove: true }
+    newTabuleiro[7][6].innerPiece = { nome: "CAVALO", cor: "BRANCO", image: "/assets/knight-w.svg", firstMove: true }
+    newTabuleiro[7][7].innerPiece = null
+
+    return newTabuleiro;
+  }
+
   public formatTimer(seconds: number): string {
     var formattedTimer: string = "";
     var min: string = Math.floor(seconds/60).toString();
@@ -860,6 +951,24 @@ export class HomeComponent implements OnInit {
     formattedTimer += (min.length > 1 ? min : "0"+min)+":"+(sec.length > 1 ? sec : "0"+sec);
 
     return formattedTimer;
+  }
+
+  public getKingCordenadas(cor: CorPeca): Cordenadas{
+
+    var cordenadas: Cordenadas = new Cordenadas();
+    for(var i=0;i<8;i++){
+      for(var j=0;j<8;j++){
+        
+        if(!this.isPlaceFree(this.tabuleiro, i, j) && this.tabuleiro[i][j].innerPiece?.nome === "REI"
+              && this.tabuleiro[i][j].innerPiece?.cor === cor){
+          cordenadas.row = i;
+          cordenadas.col = j;
+        }
+
+      } 
+    }
+
+    return cordenadas;
   }
   // #region UTILITIES
 
