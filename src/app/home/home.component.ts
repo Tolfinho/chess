@@ -81,16 +81,16 @@ export class HomeComponent implements OnInit {
       
     }
 
-    if(indexesToRemove.length > 0){
+    if(indexesToRemove.length > 0 && indexesToRemove.length === auxPossibleMoves.length){
       this.isKingDanger = true;
       this.kingCordenadas = this.getKingCordenadas(this.turn)
       setTimeout(() =>{
         this.isKingDanger = false;
         this.kingCordenadas = new Cordenadas();
       }, 500);
-
-      indexesToRemove.forEach(() => auxPossibleMoves.splice(0, 1))
     }
+    
+    indexesToRemove.forEach(() => auxPossibleMoves.splice(0, 1))
 
     this.possibleMoves = auxPossibleMoves;
 
@@ -106,9 +106,6 @@ export class HomeComponent implements OnInit {
     
     // Caso não tenha clicado em uma peça
     if(piece === null) return [];
-
-    // Caso não seja a vez da peça selecionada
-    //if(piece.cor !== this.turn) return tabuleiro;
 
     switch(piece.nome){
       case "PEAO":
@@ -721,25 +718,13 @@ export class HomeComponent implements OnInit {
       for(var j=0; j<=7; j++){
 
         if(!this.isPlaceFree(tabuleiro, i, j) && tabuleiro[i][j].innerPiece!.cor !== cor){
+          var auxPossibleMoves = this.getPossibleMoves(tabuleiro, i, j);
 
-          if(i === 4 && j === 1){
-            var auxPossibleMoves = this.getPossibleMoves(tabuleiro, i, j);
-    
-            auxPossibleMoves.forEach((move) => {
-              if(move.row === reiRow && move.col === reiCol){
-                xeque = true;
-              }
-            })
-          } else {
-            var auxPossibleMoves = this.getPossibleMoves(tabuleiro, i, j);
-    
-            auxPossibleMoves.forEach((move) => {
-              if(move.row === reiRow && move.col === reiCol){
-                xeque = true;
-              }
-            })
-          }
-
+          auxPossibleMoves.forEach((move) => {
+            if(move.row === reiRow && move.col === reiCol){
+              xeque = true;
+            }
+          })
         }
 
       } 
@@ -754,6 +739,13 @@ export class HomeComponent implements OnInit {
     
     // Primeiro verifica se foi xeque, caso contrário nem testa xeque-mate
     var auxIsXeque = this.isXeque(tabuleiro, piece?.cor === "PRETO" ? "BRANCO" : "PRETO");
+    if(auxIsXeque){
+      this.xeque = true;
+      this.xequeCor = this.turn === "PRETO" ? "BRANCO" : "PRETO";
+    } else {
+      this.xeque = false;
+      this.xequeCor = "";
+    }
 
   }
 
